@@ -53,3 +53,4 @@ Security note: Never commit your `.env` or API keys to source control. The inclu
 
 - Persist API key in localStorage (optional)
 
+this is by manoj
