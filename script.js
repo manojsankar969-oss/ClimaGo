@@ -1,5 +1,6 @@
 const apiKey = "e63bf9c08aab3481638f1ad6a926bba4";
 
+
 async function getWeather() {
     const city = document.getElementById("cityInput").value.trim();
     const result = document.getElementById("result");
@@ -524,24 +525,57 @@ function generateSummary(data, score) {
 }
 
 async function callAI(prompt) {
+    summary_prompt = `
+    Act as a localized lifestyle expert. Using the provided weather data, generate a concise guide for a Hyderabad resident. 
+    Recommend **breathable clothing** suitable for 26°C, suggest **indoor or low-impact outdoor activities** considering the conditions, and provide **health precautions** regarding air quality and visibility. 
+    Finally, identify the **optimal time to head out** based on current humidity and wind speed.
+    Ensure the tone is helpful and the output is structured into short, scannable bullet points—Clothing, 
+    Activities, Health, and Best Time—perfect for a quick-glance UI display. 
+    Provie proper html tags to diaplay in a web app.
+
+    Weather information is: ${prompt}
+    `;
+    console.log('Attempting to call AI proxy...');
+    const API_KEY = 'AIzaSyACdTt9AKsckbgomRktN2Js7jy6aHodcWE'
+    // 1. Define the API Key (Note: This is visible to users in frontend)
+    const URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+
+    console.log('Calling Gemini API directly...');
+
     try {
-        const res = await fetch('/ai', {
+        const res = await fetch(URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt })
+            headers: { 
+                'Content-Type': 'application/json' 
+            },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{ text: summary_prompt }]
+                }]
+            })
         });
+
         const j = await res.json();
-        if (j.reply) return j.reply;
-        if (j.error) return `AI error: ${j.error}`;
-        return JSON.stringify(j);
+
+        // Handle API Errors (like quota or invalid key)
+        if (j.error) {
+            return `API Error: ${j.error.message}`;
+        }
+
+        // Extract the text from the Gemini response structure
+        if (j.candidates && j.candidates[0].content) {
+            return j.candidates[0].content.parts[0].text;
+        }
+
+        return "No response from AI.";
     } catch (e) {
-        return `AI proxy error: ${e.message}`;
+        return `Connection Error: ${e.message}`;
     }
 }
 
 async function getSummary(data, score) {
     // Try AI proxy first; if it fails, fall back to rule-based summary
-    const prompt = `Summarize current weather for ${data.name}. Temperature ${Math.round(data.main.temp)}°C, condition ${data.weather[0].description}, humidity ${data.main.humidity}%, wind ${data.wind.speed} m/s. Provide a short friendly summary and one-sentence clothing advice.`;
+    const prompt = `current weather for ${data.name}. Temperature ${Math.round(data.main.temp)}°C, condition ${data.weather[0].description}, humidity ${data.main.humidity}%, wind ${data.wind.speed} m/s.`;
     const reply = await callAI(prompt);
     if (reply && !reply.startsWith('AI proxy error') && !reply.startsWith('AI error')) return reply;
     return generateSummary(data, score);

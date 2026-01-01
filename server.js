@@ -1,29 +1,48 @@
-const express = require('express');
-require('dotenv').config();
-const app = express();
-app.use(express.json());
+// const express = require('express');
+// require('dotenv').config();
+// const app = express();
 
-const API_KEY = process.env.GOOGLE_API_KEY;
+// // --- THE CRITICAL CHANGE ---
+// // This middleware is required to "accept it as json"
+// // It parses the incoming request body so you can use req.body
+// app.use(express.json()); 
 
-app.post('/ai', async (req, res) => {
-  const prompt = req.body.prompt;
-  if (!API_KEY) return res.status(500).json({ error: 'Google API key not configured. Set GOOGLE_API_KEY in .env' });
-  if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
+// const API_KEY = process.env.GOOGLE_API_KEY;
 
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1beta2/models/text-bison-001:generateText?key=${API_KEY}`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: { text: prompt }, maxOutputTokens: 250 })
-    });
-    const j = await response.json();
-    const text = (j.candidates && j.candidates[0] && j.candidates[0].output) ? j.candidates[0].output : (j.output ? j.output : JSON.stringify(j));
-    res.json({ reply: text });
-  } catch (e) {
-    res.status(500).json({ error: String(e) });
-  }
-});
+// app.post('/ai', async (req, res) => {
+//   console.log('Received AI request');
+  
+//   // Now req.body will contain your JSON object
+//   const { prompt } = req.body; 
+//   console.log('Prompt received:', prompt);
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`AI proxy listening on http://localhost:${PORT}`));
+//   if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
+//   if (!API_KEY) return res.status(500).json({ error: 'API Key not configured' });
+
+//   try {
+//     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+    
+//     const response = await fetch(url, {
+//       method: 'POST',
+//       headers: { 'Content-Type': 'application/json' },
+//       body: JSON.stringify({
+//         contents: [{ parts: [{ text: prompt }] }]
+//       })
+//     });
+
+//     const data = await response.json();
+
+//     if (data.candidates && data.candidates[0].content) {
+//       const aiText = data.candidates[0].content.parts[0].text;
+//       res.json({ reply: aiText });
+//     } else {
+//       res.status(500).json({ error: 'Unexpected AI response', details: data });
+//     }
+//   } catch (e) {
+//     console.error('Fetch error:', e);
+//     res.status(500).json({ error: e.message });
+//   }
+// });
+
+// const PORT = process.env.PORT || 3000;
+// app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
