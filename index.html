@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Weather App</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+    <div class="app">
+        <h1>Weather App</h1>
+
+        <input 
+            type="text" 
+            id="cityInput" 
+            placeholder="Enter city name"
+        />
+
+        <button onclick="getWeather()">Search</button>
+
+        <div id="result"></div>
+
+        <div id="quality" aria-live="polite"></div>
+        <div id="advice" aria-live="polite"></div>
+        
+        <hr />
+
+        <h2>Today Planner</h2>
+        <button onclick="showPlanner()">Show Today's Planner</button>
+        <div id="planner"></div>
+
+        <hr />
+
+        <div id="aqi" aria-live="polite"></div>
+
+        <div id="alerts" aria-live="polite"></div>
+
+        <div id="summary" aria-live="polite"></div>
+
+        <hr />
+
+        <h2>Best Places to Visit Today</h2>
+        <div id="places"></div>
+    </div>
+
+    <!-- Floating compare toggle and side panel -->
+    <button id="compareToggle" aria-expanded="false" aria-controls="comparePanel">Compare</button>
+
+    <div id="comparePanel" aria-hidden="true">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="margin:0">Compare Cities</h3>
+            <button id="closeCompare" aria-label="Close compare panel">✕</button>
+        </div>
+        <input type="text" id="cityA" placeholder="City A" />
+        <input type="text" id="cityB" placeholder="City B" />
+        <button onclick="compareTwoCities()">Compare</button>
+        <div id="comparison"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
