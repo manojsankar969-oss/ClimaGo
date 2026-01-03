@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Login — Climago</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Minimal, professional dark-theme login UI */
+    :root{
+      --bg:#0b0f14; --card:#0f1720; --muted:#9aa4b2; --accent:#2979ff; --danger:#ff5252; --glass: rgba(255,255,255,0.03);
+      --radius:12px; --shadow: 0 8px 30px rgba(2,6,23,0.7);
+      --transition:200ms cubic-bezier(.2,.9,.2,1);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;}
+    body{
+      margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;
+      background:linear-gradient(180deg,#071018 0%, #07121a 100%); color:#e6eef8; -webkit-font-smoothing:antialiased;
+      display:flex; align-items:center; justify-content:center; padding:24px;
+    }
+
+    /* Centered card */
+    .login-card{
+      width:100%; max-width:420px; background:var(--card); border-radius:var(--radius);
+      padding:28px; box-shadow:var(--shadow); border:1px solid rgba(255,255,255,0.03);
+      transition:transform var(--transition), box-shadow var(--transition);
+    }
+    .login-card:hover{ transform: translateY(-4px); }
+
+    .brand{ display:flex; align-items:center; gap:12px; margin-bottom:18px }
+    .logo{ width:44px; height:44px; border-radius:10px; background:linear-gradient(135deg,#2b7cff,#7b3bff); display:flex;align-items:center;justify-content:center;font-weight:700}
+    h1{ font-size:20px; margin:0; font-weight:600 }
+    p.lead{ margin:6px 0 18px; color:var(--muted); font-size:13px }
+
+    label{ display:block; font-size:13px; color:var(--muted); margin-bottom:6px }
+    .field{ margin-bottom:14px }
+
+    .input {
+      width:100%; padding:12px 14px; border-radius:10px; background:var(--glass);
+      border:1px solid rgba(255,255,255,0.03); color:var(--text, #e6eef8); font-size:15px; outline:none;
+      transition:box-shadow var(--transition), border-color var(--transition), transform var(--transition);
+    }
+    .input:focus{ box-shadow: 0 6px 18px rgba(41,121,255,0.12); border-color: rgba(41,121,255,0.25); transform: translateY(-1px);} 
+
+    .row{ display:flex; gap:10px; align-items:center; justify-content:space-between }
+
+    .helper{ font-size:13px; color:var(--muted); }
+    .forgot{ color:var(--accent); text-decoration:none; font-size:13px }
+    .forgot:hover{ text-decoration:underline }
+
+    /* Password field with toggle */
+    .pw-wrap{ position:relative }
+    .pw-toggle{ position:absolute; right:8px; top:50%; transform:translateY(-50%); border:none; background:transparent; color:var(--muted); cursor:pointer; padding:8px; border-radius:8px }
+    .pw-toggle:hover{ color:var(--accent) }
+
+    /* Primary button */
+    .btn-primary{ width:100%; padding:12px 16px; border-radius:10px; border:none; background:linear-gradient(90deg,var(--accent),#1c6bff); color:white; font-weight:600; font-size:15px; cursor:pointer; transition:opacity var(--transition), transform var(--transition); }
+    .btn-primary:hover{ transform:translateY(-2px) }
+    .btn-primary:disabled{ opacity:0.5; cursor:not-allowed; transform:none }
+
+    /* Validation messages */
+    .error{ color:var(--danger); font-size:13px; margin-top:6px }
+
+    /* Responsive */
+    @media (max-width:480px){ .login-card{ padding:20px; border-radius:10px } h1{ font-size:18px } }
+  </style>
+</head>
+<body>
+  <!-- Login card (centered) -->
+  <main class="login-card" role="main" aria-labelledby="loginTitle">
+    <div class="brand">
+      <div class="logo">CG</div>
+      <div>
+        <h1 id="loginTitle">Sign in to Climago</h1>
+        <p class="lead">Access weather tools and compare cities — secure access.</p>
+      </div>
+    </div>
+
+    <!-- Form: client-side only -->
+    <form id="loginUIForm" novalidate>
+      <!-- Email -->
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" class="input" type="email" name="email" placeholder="yourname@gmail.com" autocomplete="email" required>
+        <div id="emailError" class="error" aria-live="polite" style="display:none"></div>
+      </div>
+
+      <!-- Password with show/hide -->
+      <div class="field pw-wrap">
+        <label for="password">Password</label>
+        <input id="password" class="input" type="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
+        <button type="button" class="pw-toggle" id="togglePw" aria-pressed="false" aria-label="Show password">Show</button>
+        <div id="pwError" class="error" aria-live="polite" style="display:none"></div>
+      </div>
+
+      <div class="row" style="margin-bottom:14px">
+        <div class="helper">Don't have an account? <a class="forgot" href="#">Sign up</a></div>
+        <a class="forgot" href="#">Forgot Password?</a>
+      </div>
+
+      <button id="loginSubmit" class="btn-primary" type="submit" disabled>Login</button>
+      <div id="formMsg" class="error" aria-live="polite" style="display:none"></div>
+    </form>
+  </main>
+
+  <script>
+    // Simple client-side validation and interactivity
+    (function(){
+      const email = document.getElementById('email');
+      const password = document.getElementById('password');
+      const submit = document.getElementById('loginSubmit');
+      const emailError = document.getElementById('emailError');
+      const pwError = document.getElementById('pwError');
+      const msg = document.getElementById('formMsg');
+      const toggle = document.getElementById('togglePw');
+
+      // Gmail-specific regex: enforces @gmail.com domain
+      const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+
+      function validateEmail(){
+        const v = email.value.trim();
+        if (!v){ emailError.style.display=''; emailError.textContent='Email is required.'; return false }
+        if (!gmailRegex.test(v)){ emailError.style.display=''; emailError.textContent='Please enter a valid Gmail address (example@gmail.com).'; return false }
+        emailError.style.display='none'; emailError.textContent=''; return true;
+      }
+
+      function validatePassword(){
+        const v = password.value;
+        if (!v){ pwError.style.display=''; pwError.textContent='Password is required.'; return false }
+        if (v.length < 6){ pwError.style.display=''; pwError.textContent='Password must be at least 6 characters.'; return false }
+        pwError.style.display='none'; pwError.textContent=''; return true;
+      }
+
+      function updateSubmit(){ submit.disabled = !(validateEmail() && validatePassword()); }
+
+      email.addEventListener('input', () => { validateEmail(); updateSubmit(); });
+      password.addEventListener('input', () => { validatePassword(); updateSubmit(); });
+
+      // Toggle password visibility
+      toggle.addEventListener('click', () => {
+        const showing = password.type === 'text';
+        password.type = showing ? 'password' : 'text';
+        toggle.textContent = showing ? 'Show' : 'Hide';
+        toggle.setAttribute('aria-pressed', String(!showing));
+      });
+
+      // Form submit (no backend) — fake signin flow
+      document.getElementById('loginUIForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        msg.style.display='none';
+        if (!validateEmail() || !validatePassword()){ updateSubmit(); return }
+
+        submit.disabled = true; submit.textContent = 'Signing in…';
+        // Simulate network delay
+        setTimeout(() => {
+          // store fake session token (frontend-only)
+          localStorage.setItem('climago_session', JSON.stringify({ email: email.value.trim(), token: 'demo-token' }));
+          submit.textContent = 'Signed in';
+          // Redirect or close after short delay — for demo we'll show success message
+          msg.style.display=''; msg.style.color='limegreen'; msg.textContent = 'Signed in successfully';
+        }, 900);
+      });
+    })();
+  </script>
+</body>
+</html>
