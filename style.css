@@ -1,171 +1,192 @@
+/* --- Variables & Core --- */
+:root {
+    --bg: #0a0a0a;
+    --card-bg: #161616;
+    --card-border: #2a2a2a;
+    --accent: #2979ff;
+    --text: #ffffff;
+    --text-dim: #999;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
 body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #121212;
-    color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}
-
-.app {
-    background: #1e1e1e;
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, sans-serif;
     padding: 20px;
-    border-radius: 10px;
-    text-align: center;
-    width: 300px;
+    line-height: 1.5;
 }
 
-label.small {
-    display: block;
-    font-size: 12px;
-    color: #bdbdbd;
-    text-align: left;
-    margin-left: 5px;
+/* --- Layout Engine --- */
+.app-wrapper {
+    max-width: 1400px;
+    margin: 0 auto;
 }
+
+.main-header {
+    margin-bottom: 30px;
+    text-align: center;
+    position: relative;
+}
+
+.search-bar {
+    display: flex;
+    gap: 10px;
+    max-width: 500px;
+    margin: 20px auto;
+}
+
+.header-actions {
+    position: absolute;
+    right: 20px;
+    top: 18px;
+}
+
+/* Modal login styles */
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: center; justify-content: center; }
+.modal.open { display: flex; }
+.modal-content { background: var(--card-bg); border: 1px solid var(--card-border); padding: 20px; border-radius: 12px; width: 320px; position: relative; }
+.modal-content h3 { margin-bottom: 12px; }
+.modal-content label { display:block; margin-top:8px; color:var(--text-dim); font-size:13px; }
+.modal-content input { width:100%; margin-top:6px; padding:10px 12px; border-radius:8px; border:1px solid var(--card-border); background:#000; color:var(--text); }
+.modal-content button[type="submit"] { width:100%; margin-top:12px; }
+.modal-close { position:absolute; right:10px; top:8px; background:none; border:none; color:var(--text-dim); font-size:18px; cursor:pointer; }
+
+/* --- THE GRID (Mobile First) --- */
+.dashboard-grid {
+    display: flex;
+    flex-direction: column; /* Stack on mobile */
+    gap: 20px;
+}
+
+/* PC LAYOUT (Desktop) */
+@media (min-width: 1024px) {
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr; /* 3 Columns on PC */
+        align-items: start;
+    }
+    .main-header { text-align: left; }
+    .search-bar { margin: 20px 0; }
+}
+
+/* --- UI Components --- */
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.place-card { margin-bottom: 8px; }
+.place-card strong, .place-card > strong, .place-card .place-name { color: #ff5252; }
+h1, h2, h3 { margin-bottom: 15px; }
+.accent-text { color: var(--accent); }
 
 input {
-    width: 100%;
-    padding: 8px;
-    margin: 8px 0;
-    box-sizing: border-box;
-    border-radius: 6px;
-    border: 1px solid #2c2c2c;
-    background: #121212;
-    color: #fff;
+    flex: 1;
+    background: #000;
+    border: 1px solid var(--card-border);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 10px;
+    outline: none;
 }
+
+input:focus { border-color: var(--accent); }
 
 button {
-    padding: 8px 15px;
-    cursor: pointer;
-    border: none;
-    background: #2979ff;
+    background: var(--accent);
     color: white;
-    border-radius: 6px;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform 0.2s;
 }
 
-#result {
-    margin-top: 15px;
-    text-align: left;
+button:active { transform: scale(0.95); }
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    width: 100%;
 }
 
-.card {
-    background: #151515;
-    padding: 12px;
-    border-radius: 8px;
-}
-
-.card .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.card img {
-    width: 60px;
-    height: 60px;
-}
-
-#quality .card, #advice .card {
-    margin-top: 10px;
-}
-
-#quality .card {
-    display: inline-block;
-}
-
-#advice .card ul {
-    margin: 8px 0 0 18px;
-    padding: 0;
-}
-
-#advice .card li {
-    margin-bottom: 6px;
-}
-
-#comparison .card, #planner .card, #alerts .card, #summary .card {
-    margin-top: 10px;
-}
-
-#comparison .card p { margin: 6px 0; }
-
-#planner {
-    margin-top: 8px;
-}
-
-.planner-slot {
-    background: #0f0f0f;
-    padding: 8px;
-    border-radius: 6px;
-    margin-bottom: 8px;
-}
-
-.planner-slot strong { display:block; margin-bottom:6px; }
-.planner-slot div { font-size: 13px; color: #e0e0e0; }
-
-/* Floating compare toggle and panel */
+/* --- Floating Comparison Panel --- */
 #compareToggle {
     position: fixed;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: #2979ff;
-    color: white;
-    border: none;
-    padding: 10px 12px;
-    border-radius: 24px;
-    cursor: pointer;
-    z-index: 1000;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    font-size: 24px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    z-index: 100;
 }
 
 #comparePanel {
     position: fixed;
-    right: 12px;
-    top: 18%;
-    width: 300px;
-    background: #1e1e1e;
-    padding: 12px;
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-    display: none;
-    z-index: 999;
+    right: 30px;
+    bottom: 100px;
+    width: 320px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 20px;
+    display: none; /* Controlled by JS */
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    z-index: 99;
 }
 
 #comparePanel.open { display: block; }
 
-#comparePanel input { width: 100%; margin: 6px 0; }
-#comparePanel button { width: 100%; }
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
 
-/* compare panel close button */
 #closeCompare {
-    background: transparent;
-    color: #cfcfcf;
-    border: none;
-    font-size: 18px;
-    cursor: pointer;
+    background: none;
+    padding: 0;
+    color: var(--text-dim);
 }
 
-/* comfort breakdown bar */
-.comfort-bars { display:flex; gap:6px; margin-top:8px; }
-.comfort-bar { flex:1; height:10px; border-radius:6px; background:#2a2a2a; overflow:hidden; position:relative }
-.comfort-bar > i { position:absolute; left:0; top:0; bottom:0; background:linear-gradient(90deg,#4caf50,#81c784); width:0%; }
-.comfort-labels { display:flex; justify-content:space-between; font-size:12px; color:#bdbdbd; margin-top:6px; }
-
-/* place icons */
-.place-icon { display:inline-block; width:18px; height:18px; margin-right:8px; vertical-align:middle }
-
-/* Best Places cards */
-#places { margin-top: 8px; }
-.place-card {
-    background: linear-gradient(180deg,#161616,#0f0f0f);
-    border: 1px solid #2a2a2a;
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 8px;
+/* Specific Mobile Adjustments */
+@media (max-width: 768px) {
+    #comparePanel {
+        width: 100%;
+        right: 0;
+        bottom: 0;
+        border-radius: 20px 20px 0 0;
+    }
 }
-.place-card h4 { margin: 0 0 6px 0; }
-.place-badge { display:inline-block; padding:4px 8px; border-radius:12px; font-size:12px; margin-right:8px; }
-.badge-outdoor { background:#2e7d32; color:#fff; }
-.badge-indoor { background:#1565c0; color:#fff; }
-.place-reason { color:#cfcfcf; font-size:13px; margin-top:6px; }
+
+/* --- Compare page styles --- */
+.compare-container { margin-top: 20px; }
+.compare-row {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    flex-direction: column;
+}
+.compare-col { flex: 1; }
+.compare-col img { width: 96px; height: 96px; object-fit: contain; }
+.face { font-size: 40px; margin-bottom: 8px; }
+
+@media (min-width: 769px) {
+    .compare-row { flex-direction: row; }
+}
+
+.distance-km {
+    color: #ff5252;
+    font-weight: 700;
+    margin-top: 4px;
+}
