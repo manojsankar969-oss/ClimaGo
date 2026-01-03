@@ -1,62 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <title>Weather App</title>
-    <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Climago</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="app">
-        <h1>Weather App</h1>
+    <div class="app-wrapper">
+        <header class="main-header">
+            <h1>Climago <span class="accent-text">.</span></h1>
+            <div class="header-actions">
+                <button id="loginBtn" class="btn-outline">Login</button>
+            </div>
+            <div class="search-bar">
+                <input type="text" id="cityInput" placeholder="Enter city name...">
+                <button onclick="getWeather()">Search</button>
+            </div>
+        </header>
 
-        <input 
-            type="text" 
-            id="cityInput" 
-            placeholder="Enter city name"
-        />
+        <main class="dashboard-grid">
+            <section class="col">
+                <div class="card" id="result">
+                    <p class="placeholder-text">Search a city to see current weather.</p>
+                </div>
+                <div id="aqi"></div>
+                <div id="quality"></div>
+            </section>
 
-        <button onclick="getWeather()">Search</button>
+            <section class="col">
+                <div class="card">
+                    <h3>Today's Planner</h3>
+                    <button class="btn-outline" onclick="showPlanner()">Generate Schedule</button>
+                    <div id="planner"></div>
+                </div>
+                <div id="summary"></div>
+            </section>
 
-        <div id="result"></div>
-
-        <div id="quality" aria-live="polite"></div>
-        <div id="advice" aria-live="polite"></div>
-        
-        <hr />
-
-        <h2>Today Planner</h2>
-        <button onclick="showPlanner()">Show Today's Planner</button>
-        <div id="planner"></div>
-
-        <hr />
-
-        <div id="aqi" aria-live="polite"></div>
-
-        <div id="alerts" aria-live="polite"></div>
-
-        <div id="summary" aria-live="polite"></div>
-
-        <hr />
-
-        <h2>Best Places to Visit Today</h2>
-        <div id="places"></div>
+            <section class="col">
+                <div id="alerts"></div>
+                <div id="advice"></div>
+                <div class="card">
+                    <h3>Best Places to Visit</h3>
+                    <div id="places"></div>
+                </div>
+            </section>
+        </main>
     </div>
 
-    <!-- Floating compare toggle and side panel -->
-    <button id="compareToggle" aria-expanded="false" aria-controls="comparePanel">Compare</button>
+    <button id="compareToggle" title="Compare Cities">＋</button>
 
-    <div id="comparePanel" aria-hidden="true">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-            <h3 style="margin:0">Compare Cities</h3>
-            <button id="closeCompare" aria-label="Close compare panel">✕</button>
+    <div id="comparePanel">
+        <div class="panel-header">
+            <h3>Compare Cities</h3>
+            <button id="closeCompare">✕</button>
         </div>
-        <input type="text" id="cityA" placeholder="City A" />
-        <input type="text" id="cityB" placeholder="City B" />
-        <button onclick="compareTwoCities()">Compare</button>
-        <div id="comparison"></div>
+        <div class="panel-body">
+            <input type="text" id="cityA" placeholder="City A">
+            <input type="text" id="cityB" placeholder="City B">
+            <button onclick="compareTwoCities()" class="btn-block">Compare Now</button>
+            <div id="comparison"></div>
+        </div>
     </div>
 
     <script src="script.js"></script>
+
+    <!-- Login modal -->
+    <div id="loginModal" class="modal" aria-hidden="true">
+        <div class="modal-content">
+            <button class="modal-close" id="closeLogin">✕</button>
+            <h3>Sign in</h3>
+            <form id="loginForm">
+                <label>Email</label>
+                <input type="email" id="loginEmail" placeholder="you@example.com" required>
+                <label>Password</label>
+                <input type="password" id="loginPassword" placeholder="Password" required>
+                <button type="submit">Sign in</button>
+            </form>
+            <div id="loginMsg" class="card" style="display:none;margin-top:12px;padding:8px;font-size:14px;"></div>
+        </div>
+    </div>
 </body>
 </html>
