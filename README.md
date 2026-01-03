@@ -33,7 +33,7 @@ This project includes a small Node.js proxy to call Google Cloud's Generative La
 
 Steps:
 
-1. Copy `.env.example` to `.env` and set `GOOGLE_API_KEY` to your key.
+1. Copy `.env.example` to `.env` and set `GEMINI_API_KEY` to your key.
 
 2. Install dependencies and run the proxy (requires Node 18+ recommended):
 
@@ -44,6 +44,12 @@ npm start
 ```
 
 3. In the UI, enable the "Use AI summary" checkbox to have the app request summaries from the local proxy.
+
+Render deployment (production):
+
+- Add `GEMINI_API_KEY` to your Render service's Environment variables (Dashboard → Environment → Environment Variables).
+- Do NOT add your `.env` to the repo — Render reads environment variables from its settings and injects them at runtime.
+- Restart or redeploy your service after updating environment variables.
 
 Note: The UI now attempts to use the local AI proxy automatically. If the proxy is not running or the key is not configured, the app will gracefully fall back to the built-in rule-based summary.
 
