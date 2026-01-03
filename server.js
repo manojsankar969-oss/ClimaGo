@@ -58,6 +58,14 @@ app.post('/ai', async (req, res) => {
     if (!upstream.ok) {
       const txt = await upstream.text().catch(() => '');
       console.error('Upstream error', upstream.status, txt);
+      // Detect common auth errors (expired / revoked / invalid key)
+      if (upstream.status === 401 || upstream.status === 403) {
+        return res.status(502).json({
+          error: 'Upstream authentication error: API key invalid or expired. Renew your GEMINI_API_KEY and update the environment variable.',
+          status: upstream.status,
+          body: txt
+        });
+      }
       return res.status(502).json({ error: 'Upstream API error', status: upstream.status, body: txt });
     }
 
