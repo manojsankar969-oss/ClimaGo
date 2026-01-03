@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compare Cities - Climago</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-wrapper">
+        <header class="main-header">
+            <h1>Compare Cities</h1>
+        </header>
+
+        <main class="compare-container">
+            <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;">
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                    <button class="btn-outline" onclick="goBack()">← Back</button>
+                    <div id="distanceDisplay" class="distance-km"></div>
+                </div>
+                <div id="compareSummary" style="flex:1"></div>
+            </div>
+
+            <div id="compareMessage" class="card">Loading comparison...</div>
+            <div id="compareRow" class="compare-row"></div>
+            <div id="compareDetail"></div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Parse query params
+        const params = new URLSearchParams(window.location.search);
+        const cityA = params.get('cityA');
+        const cityB = params.get('cityB');
+        const msg = document.getElementById('compareMessage');
+        const row = document.getElementById('compareRow');
+        const detail = document.getElementById('compareDetail');
+
+
+        if (!cityA || !cityB) {
+            msg.innerText = 'Provide cityA and cityB in the URL.';
+        } else {
+            msg.style.display = 'none';
+            (async function() {
+                try {
+                    const [wa, wb] = await Promise.all([fetchWeatherByName(cityA), fetchWeatherByName(cityB)]);
+                    if (!wa || !wb) {
+                        msg.style.display = '';
+                        msg.innerText = 'Could not fetch one or both cities.';
+                        return;
+                    }
+
+                    const scoreA = scoreWeather(wa);
+                    const scoreB = scoreWeather(wb);
+
+                    // fetch AQI and summaries in parallel
+                    const [aqiA, aqiB, summaryA, summaryB] = await Promise.all([
+                        fetchAQI(wa.coord.lat, wa.coord.lon),
+                        fetchAQI(wb.coord.lat, wb.coord.lon),
+                        getSummary(wa, scoreA),
+                        getSummary(wb, scoreB)
+                    ]);
+
+                    // Build city cards with detailed info
+                    row.innerHTML = `
+                        <div class="compare-col card">
+                            <div class="face">${isMobile() ? '🙂' : '🖥️'}</div>
+                            <h3>${wa.name}, ${wa.sys.country}</h3>
+                            <img src="https://openweathermap.org/img/wn/${wa.weather[0].icon}@2x.png" alt="${wa.weather[0].description}">
+                            <p><strong>Temp:</strong> ${Math.round(wa.main.temp)}°C (feels ${Math.round(wa.main.feels_like)}°C)</p>
+                            <p><strong>Weather:</strong> ${wa.weather[0].description}</p>
+                            <p><strong>Humidity:</strong> ${wa.main.humidity}%</p>
+                            <p><strong>Wind:</strong> ${wa.wind.speed} m/s</p>
+                            <p><strong>Score:</strong> ${scoreA}/10</p>
+                            <p><strong>AQI:</strong> ${aqiLabel(aqiA)}</p>
+                            <div><strong>AI Summary:</strong><div>${summaryA}</div></div>
+                            <div id="placesA"><strong>Places Nearby:</strong><div></div></div>
+                        </div>
+                        <div class="compare-col card">
+                            <div class="face">${isMobile() ? '🙂' : '🖥️'}</div>
+                            <h3>${wb.name}, ${wb.sys.country}</h3>
+                            <img src="https://openweathermap.org/img/wn/${wb.weather[0].icon}@2x.png" alt="${wb.weather[0].description}">
+                            <p><strong>Temp:</strong> ${Math.round(wb.main.temp)}°C (feels ${Math.round(wb.main.feels_like)}°C)</p>
+                            <p><strong>Weather:</strong> ${wb.weather[0].description}</p>
+                            <p><strong>Humidity:</strong> ${wb.main.humidity}%</p>
+                            <p><strong>Wind:</strong> ${wb.wind.speed} m/s</p>
+                            <p><strong>Score:</strong> ${scoreB}/10</p>
+                            <p><strong>AQI:</strong> ${aqiLabel(aqiB)}</p>
+                            <div><strong>AI Summary:</strong><div>${summaryB}</div></div>
+                            <div id="placesB"><strong>Places Nearby:</strong><div></div></div>
+                        </div>
+                    `;
+
+                    // distance between city centers — show under Back button in red
+                    const distKm = haversineDistance(wa.coord.lat, wa.coord.lon, wb.coord.lat, wb.coord.lon);
+                    const distEl = document.getElementById('distanceDisplay');
+                    if (distEl) distEl.innerHTML = `Distance: <strong>${Math.round(distKm)} km</strong>`;
+
+                    // places suggestions (local simple implementation)
+                    const placesForA = suggestPlacesLocal(wa);
+                    const placesForB = suggestPlacesLocal(wb);
+                    const pa = document.querySelector('#placesA div');
+                    const pb = document.querySelector('#placesB div');
+                    pa.innerHTML = placesForA.map(p=>`<div class="place-card"><strong>${p.name}</strong> — ${p.reason}</div>`).join('');
+                    pb.innerHTML = placesForB.map(p=>`<div class="place-card"><strong>${p.name}</strong> — ${p.reason}</div>`).join('');
+
+                    // full comparison detail
+                    const winner = scoreA === scoreB ? 'Tie' : (scoreA > scoreB ? wa.name : wb.name);
+                    detail.innerHTML = `<div class="card"><h3>Result: ${winner}</h3><p>${explainComparison(wa, wb)}</p></div>`;
+                } catch (e) {
+                    msg.style.display = '';
+                    msg.innerText = 'Error loading comparison.';
+                }
+            })();
+        }
+
+        // Basic mobile detection for showing a friendly face
+        function isMobile() {
+            return window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+        }
+
+        function goBack() { window.location.href = 'index.html'; }
+
+        function haversineDistance(lat1, lon1, lat2, lon2) {
+            const toRad = v => v * Math.PI / 180;
+            const R = 6371;
+            const dLat = toRad(lat2 - lat1);
+            const dLon = toRad(lon2 - lon1);
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function aqiLabel(aqiData) {
+            if (!aqiData || !aqiData.list || !aqiData.list[0]) return 'N/A';
+            const a = aqiData.list[0].main.aqi;
+            const map = {1: 'Good',2:'Fair',3:'Moderate',4:'Poor',5:'Very Poor'};
+            return `${map[a] || 'Unknown'} (${a})`;
+        }
+
+        // Lightweight local places suggestion (fallback)
+        function suggestPlacesLocal(data) {
+            const city = (data.name || '').toLowerCase();
+            const temp = data.main.temp;
+            const cond = (data.weather && data.weather[0] && data.weather[0].main) ? data.weather[0].main.toLowerCase() : '';
+            const precip = /rain|drizzle|thunder/.test(cond);
+            const localPlaces = {
+                'mumbai': [ {name:'Marine Drive', reason:'Coastal promenade, good at sunset'}, {name:'Gateway of India', reason:'Historic seafront'} ],
+                'delhi': [ {name:'Lodhi Garden', reason:'Historic garden for walks'}, {name:'National Museum', reason:'Indoor cultural exhibits'} ],
+            };
+            let list = localPlaces[city] || [ {name:'City Park', reason:'Open green area'}, {name:'Local Museum', reason:'Indoor exhibits'} ];
+            // add reason adjustments
+            return list.map(p=>({ name: p.name, reason: (precip ? 'May be wet — check current conditions. ' : '') + p.reason + ` • ${Math.round(temp)}°C` }));
+        }
+    </script>
+</body>
+</html>
