@@ -276,6 +276,46 @@ document.addEventListener('DOMContentLoaded', () => {
             toggle.setAttribute('aria-expanded', 'false');
         });
     }
+    // Login modal handlers
+    const loginBtn = document.getElementById('loginBtn');
+    const loginModal = document.getElementById('loginModal');
+    const closeLogin = document.getElementById('closeLogin');
+    const loginForm = document.getElementById('loginForm');
+    const loginMsg = document.getElementById('loginMsg');
+    if (loginBtn && loginModal) {
+        loginBtn.addEventListener('click', () => {
+            loginModal.classList.add('open');
+            loginModal.setAttribute('aria-hidden', 'false');
+            const e = document.getElementById('loginEmail'); if (e) e.focus();
+        });
+    }
+    if (closeLogin && loginModal) {
+        closeLogin.addEventListener('click', () => {
+            loginModal.classList.remove('open');
+            loginModal.setAttribute('aria-hidden', 'true');
+        });
+    }
+    if (loginForm) {
+        loginForm.addEventListener('submit', (ev) => {
+            ev.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const pwd = document.getElementById('loginPassword').value.trim();
+            if (!email || !pwd) {
+                loginMsg.style.display = '';
+                loginMsg.innerText = 'Enter email and password.';
+                return;
+            }
+            // Simple fake auth: store user email locally
+            localStorage.setItem('climago_user', JSON.stringify({ email }));
+            loginMsg.style.display = '';
+            loginMsg.innerText = 'Signed in as ' + email;
+            setTimeout(() => {
+                loginModal.classList.remove('open');
+                loginModal.setAttribute('aria-hidden', 'true');
+                loginMsg.style.display = 'none';
+            }, 900);
+        });
+    }
 });
 
 // --- Quality score and advice engine ---
@@ -351,39 +391,21 @@ function generateAdvice(data, score) {
 
 // --- City-to-city comparison ---
 async function compareTwoCities() {
+    // Open comparison in a new page with city names passed via query params
     const a = document.getElementById('cityA').value.trim();
     const b = document.getElementById('cityB').value.trim();
     const comp = document.getElementById('comparison');
-    if (!a || !b) { comp.innerHTML = 'Enter both city names'; return; }
-
-    comp.innerHTML = 'Comparing...';
-    try {
-        const [wa, wb] = await Promise.all([fetchWeatherByName(a), fetchWeatherByName(b)]);
-        if (!wa || !wb) { comp.innerHTML = 'Could not fetch one or both cities.'; return; }
-
-        const scoreA = scoreWeather(wa);
-        const scoreB = scoreWeather(wb);
-
-        const winner = scoreA === scoreB ? 'Tie' : (scoreA > scoreB ? a : b);
-
-        comp.innerHTML = `
-            <div class="card">
-                <h3>Comparison</h3>
-                <p><strong>${a}:</strong> ${Math.round(wa.main.temp)}°C, ${wa.main.humidity}% humidity, ${wa.wind.speed} m/s, Score ${scoreA}/10</p>
-                <p><strong>${b}:</strong> ${Math.round(wb.main.temp)}°C, ${wb.main.humidity}% humidity, ${wb.wind.speed} m/s, Score ${scoreB}/10</p>
-                <p><strong>Better Today:</strong> ${winner === 'Tie' ? 'Tie' : winner + ' (' + (winner===a? 'City A':'City B') + ')'}</p>
-                <p><strong>Reason:</strong> ${explainComparison(wa, wb)}</p>
-            </div>
-        `;
-        // auto-close compare panel after showing results
-        const panel = document.getElementById('comparePanel');
-        const toggle = document.getElementById('compareToggle');
-        if (panel && toggle) {
-            panel.classList.remove('open');
-            panel.setAttribute('aria-hidden', 'true');
-            toggle.setAttribute('aria-expanded', 'false');
-        }
-    } catch (e) { comp.innerHTML = 'Error comparing cities.'; }
+    if (!a || !b) { if (comp) comp.innerHTML = 'Enter both city names'; return; }
+    const url = `compare.html?cityA=${encodeURIComponent(a)}&cityB=${encodeURIComponent(b)}`;
+    window.open(url, '_blank');
+    // close the panel
+    const panel = document.getElementById('comparePanel');
+    const toggle = document.getElementById('compareToggle');
+    if (panel && toggle) {
+        panel.classList.remove('open');
+        panel.setAttribute('aria-hidden', 'true');
+        toggle.setAttribute('aria-expanded', 'false');
+    }
 }
 
 async function fetchWeatherByName(name) {
@@ -399,31 +421,16 @@ function explainComparison(wa, wb) {
     const scoreA = scoreWeather(wa);
     const scoreB = scoreWeather(wb);
     const parts = [];
-    if (Math.abs(scoreA - scoreB) < 1) parts.push('Scores are close; both cities have similar comfort.');
-    else if (scoreA > scoreB) parts.push(`${wa.name} is more comfortable based on temperature and humidity.`);
-            qualityEl.innerHTML = `
-                <div class="card">
-                    <strong>Weather Score:</strong> ${quality.toFixed(1)}/10
-                    <div class="comfort-bars" id="comfortBars"></div>
-                    <div class="comfort-labels"><span>Temp</span><span>Humidity</span><span>Wind</span><span>Cond</span></div>
-                </div>
-            `;
+    if (Math.abs(scoreA - scoreB) < 1) {
+        parts.push('Scores are close; both cities have similar comfort.');
+    } else if (scoreA > scoreB) {
+        parts.push(`${wa.name} is more comfortable based on overall score (${scoreA}/10 vs ${scoreB}/10).`);
+    } else {
+        parts.push(`${wb.name} is more comfortable based on overall score (${scoreB}/10 vs ${scoreA}/10).`);
+    }
 
-            // render comfort breakdown bars
-            const breakdown = computeBreakdown(data);
-            const bars = document.getElementById('comfortBars');
-            if (bars) {
-                bars.innerHTML = '';
-                ['temp','humidity','wind','condition'].forEach(k => {
-                    const val = Math.round((breakdown[k]||0)*100);
-                    const bar = document.createElement('div');
-                    bar.className = 'comfort-bar';
-                    bar.innerHTML = `<i style="width:${val}%"></i>`;
-                    bars.appendChild(bar);
-                });
-            }
-    if (/rain|snow|thunder/.test(wa.weather[0].description)) parts.push(`${wa.name} has precipitation which lowers comfort.`);
-    if (/rain|snow|thunder/.test(wb.weather[0].description)) parts.push(`${wb.name} has precipitation which lowers comfort.`);
+    if (/rain|snow|thunder/.test(wa.weather && wa.weather[0] && wa.weather[0].description)) parts.push(`${wa.name} has precipitation which lowers comfort.`);
+    if (/rain|snow|thunder/.test(wb.weather && wb.weather[0] && wb.weather[0].description)) parts.push(`${wb.name} has precipitation which lowers comfort.`);
     return parts.join(' ');
 }
 
